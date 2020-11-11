@@ -249,7 +249,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
                 foreach (Poll poll in this.GetFinishedPolls().Where(x =>
                     ((x.VotingData.Key == VoteKey.AddFederationMember) || (x.VotingData.Key == VoteKey.KickFederationMember))))
                 {
-                    bool shouldBeExecuted = (poll.PollVotedInFavorBlockData.Height + this.network.Consensus.MaxReorgLength) < chainedHeader.Height;
+                    bool shouldBeExecuted = !poll.IsPending && (poll.PollVotedInFavorBlockData.Height + this.network.Consensus.MaxReorgLength + 1) < chainedHeader.Height;
                     IFederationMember federationMember = poaConsensusFactory.DeserializeFederationMember(poll.VotingData.Data);
 
                     if (poll.IsExecuted && !shouldBeExecuted)
