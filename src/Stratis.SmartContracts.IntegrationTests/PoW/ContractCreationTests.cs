@@ -112,5 +112,34 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 Assert.True(BitConverter.ToBoolean(sender.GetStorageValue(response.NewContractAddress, "IsContract")));
             }
         }
+
+        [Fact]
+        public void Test_LibraryContract_Creation()
+        {
+            using (PoWMockChain chain = new PoWMockChain(2))
+            {
+                MockChainNode sender = chain.Nodes[0];
+                MockChainNode receiver = chain.Nodes[1];
+
+                sender.MineBlocks(1);
+
+                ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/LibraryTest.cs");
+                Assert.True(compilationResult.Success);
+
+                // Create contract and ensure code exists
+                BuildCreateContractTransactionResponse response = sender.SendCreateContractTransaction(compilationResult.Compilation, 0);
+                receiver.WaitMempoolCount(1);
+                receiver.MineBlocks(2);
+                Assert.NotNull(receiver.GetCode(response.NewContractAddress));
+                Assert.NotNull(sender.GetCode(response.NewContractAddress));
+
+                // Call contract and ensure internal contract was created.
+                BuildCallContractTransactionResponse callResponse = sender.SendCallContractTransaction("Exists", response.NewContractAddress, 0);
+                receiver.WaitMempoolCount(1);
+                receiver.MineBlocks(1);
+
+                Assert.True(BitConverter.ToBoolean(sender.GetStorageValue(response.NewContractAddress, "Exists")));
+            }
+        }
     }
 }
